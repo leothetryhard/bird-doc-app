@@ -1,0 +1,81 @@
+<div class="form-container">
+  @if(isLoading){
+    <div class="loading-shade">
+      <mat-spinner></mat-spinner>
+    </div>
+  }
+
+  <h1>{{ isEditMode ? 'Edit Data Entry' : 'Create Data Entry' }}</h1>
+
+  <form [formGroup]="entryForm" (ngSubmit)="onSubmit()" novalidate>
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Ringing Station</mat-label>
+        <mat-select formControlName="ringing_station" #formInput appFocusNext="staff">
+          <mat-option [value]="1">Station A</mat-option>
+          <mat-option [value]="2">Station B</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Staff</mat-label>
+        <mat-select formControlName="staff" #formInput appFocusNext="date_time">
+          <mat-option [value]="1">Dr. Schmidt</mat-option>
+          <mat-option [value]="2">Dr. Meier</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date and Time</mat-label>
+        <input matInput="picker" formControlName="date_time" #formInput appFocusNext="species">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Species (German Name)</mat-label>
+        <input type="text"
+               placeholder="Start typing..."
+               matInput
+               formControlName="species"
+               [matAutocomplete]="autoSpecies"
+               #formInput
+               appFocusNext="bird_status">
+        <mat-autocomplete #autoSpecies="matAutocomplete" (optionSelected)="focusNext('species')">
+        ="displaySpecies">
+          @for (species of filteredSpecies$ | async; track species){
+            <mat-option [value]="species">
+              {{ species.german_name }} ({{ species.code }})
+            </mat-option>
+          }
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Bird Status</mat-label>
+        <mat-select formControlName="bird_status" #formInput appFocusNext="ring_number">
+          @for (status of birdStatusValues; track status){
+            <mat-option [value]="status">{{ status }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Ring Number</mat-label>
+        <input matInput formControlName="ring_number" #formInput appFocusNext="net_location">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Comment</mat-label>
+        <textarea matInput formControlName="comment" #formInput></textarea>
+      </mat-form-field>
+    </div>
+
+    <div class="form-actions">
+      <button mat-stroked-button type="button" [routerLink]="['/data-entries']">Cancel</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="entryForm.invalid || isLoading">
+        {{ isEditMode ? 'Update' : 'Save' }}
+      </button>
+    </div>
+  </form>
+</div>
