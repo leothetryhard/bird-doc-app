@@ -85,7 +85,7 @@ export class DataEntryFormComponent implements OnInit {
     date_time: [this.getInitialDateTime(), Validators.required],
     species: ['', Validators.required],
     bird_status: [BirdStatus.FirstCatch, Validators.required],
-    ring_number: ['', Validators.required],
+    ring_id: ['', Validators.required],
     net_location: [null as number | null, Validators.required],
     net_height: [null as number | null, Validators.required],
     net_direction: [Direction.Left, Validators.required],
@@ -102,7 +102,7 @@ export class DataEntryFormComponent implements OnInit {
     weight_gram: [null as number | null],
     notch_f2: [null as number | null],
     inner_foot: [null as number | null],
-    comment: [''],
+    comment: [null as string | null],
     has_mites: [false, Validators.required],
     has_hunger_stripes: [false, Validators.required],
     has_brood_patch: [false, Validators.required],
@@ -110,7 +110,7 @@ export class DataEntryFormComponent implements OnInit {
   });
 
   private readonly focusOrder: string[] = [
-    'ringing_station', 'staff', 'date_time', 'species', 'bird_status', 'ring_number',
+    'ringing_station', 'staff', 'date_time', 'species', 'bird_status', 'ring_id',
     'net_location', 'net_height', 'net_direction', 'age_class', 'sex', 'fat_deposit', 'muscle_class',
     'small_feather_int', 'small_feather_app', 'hand_wing',
     'tarsus', 'feather_span', 'wing_span', 'weight_gram', 'notch_f2',
@@ -231,6 +231,7 @@ export class DataEntryFormComponent implements OnInit {
 
     this.loading.set(true);
     const formValue = this.transformFromForm(this.entryForm.getRawValue());
+    console.log(formValue);
 
     const saveOperation = this.isEditMode()
       ? this.apiService.updateDataEntry(this.entryId()!, formValue)
@@ -258,7 +259,7 @@ export class DataEntryFormComponent implements OnInit {
     // The API might return related objects; we need to extract IDs for the form
     const formValue = {...entry} as any;
     formValue.species = entry.species; // Assume the backend gives you the object or ID.
-    formValue.ring_number = (entry.ring as any)?.number; // Adjust based on API response
+    formValue.ring_id = (entry.ring as any)?.number; // Adjust based on API response
     // Ensure date is in a format the form control can use
     formValue.date_time = this.datePipe.transform(entry.date_time, 'yyyy-MM-ddTHH:mm');
     return formValue;
@@ -267,8 +268,8 @@ export class DataEntryFormComponent implements OnInit {
   // Data Transformation for API Submission
   private transformFromForm(formValue: any): Partial<DataEntry> {
     const payload = {...formValue};
-    // The species control holds the full object, extract the ID
-    payload.species = formValue.species?.id;
+    payload.species_id = formValue.species?.id;
+    payload.staff_id = 2;
     return payload;
   }
 
