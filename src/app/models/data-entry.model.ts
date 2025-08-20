@@ -51,6 +51,18 @@ export enum MuscleClass {
   Three = 3,
 }
 
+export enum FatClass {
+  Null = 0,
+  One = 1,
+  Two = 2,
+  Three = 3,
+  Four = 4,
+  Five = 5,
+  Six = 6,
+  Seven = 7,
+  Eight = 8,
+}
+
 export interface DataEntry {
   id: string;
   species: string;
@@ -78,10 +90,14 @@ export interface DataEntry {
   created: string;
   updated: string;
   comment: string;
+  has_mites: boolean;
+  has_hunger_stripes: boolean;
+  has_brood_patch: boolean;
+  has_cpl_plus: boolean;
 }
 
-// Helper for select options
 export interface SelectOption<T> {
   value: T;
   viewValue: string;
+  key?: string;
 }
