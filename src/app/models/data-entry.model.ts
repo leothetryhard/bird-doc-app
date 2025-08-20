@@ -1,116 +1,87 @@
-// src/app/core/models/data-entry.model.ts
-
-// Interfaces for related models (e.g., Species, RingingStation)
-export interface RingingStation {
-  id: number;
-  name: string;
-  // other fields...
+export enum Direction {
+  Left = 'L',
+  Right = 'R',
 }
-
-export interface StaffMember {
-  id: number;
-  username: string;
-  // other fields...
-}
-
-export interface Species {
-  id: number;
-  german_name: string;
-  scientific_name: string;
-  code: string;
-  // other fields...
-}
-
-// Main interface for the DataEntry model
-export interface DataEntry{
-  id?: number;
-  ringing_station: number; // Foreign Key ID
-  staff: number; // Foreign Key ID
-  date_time: string; // ISO 8601 format
-  species: number; // Foreign Key ID
-  bird_status: BirdStatus;
-  ring_number: string;
-  net_location: string;
-  net_height: NetHeight;
-  net_direction: NetDirection;
-  fat_deposit: FatDeposit;
-  muscle_class: MuscleClass;
-  age_class: AgeClass;
-  sex: Sex;
-  small_feather_int: SmallFeatherInt;
-  small_feather_app: SmallFeatherApp;
-  hand_wing: number | null;
-  tarsus: number | null;
-  feather_span: number | null;
-  wing_span: number | null;
-  weight_gram: number | null;
-  notch_f2: number | null;
-  inner_foot: number | null;
-  comment: string | null;
-}
-
-// src/app/core/models/data-entry.model.ts (continued)
 
 export enum BirdStatus {
-  NEW = 'N',
-  RECAPTURE = 'W',
-  CONTROL = 'K',
-}
-
-export enum NetHeight {
-  BODEN = 'B',
-  MITTE = 'M',
-  OBEN = 'O',
-}
-
-export enum NetDirection {
-  NORD = 'N',
-  OST = 'O',
-  SUED = 'S',
-  WEST = 'W',
-}
-
-export enum FatDeposit {
-  NONE = '0',
-  TRACE = '1',
-  LITTLE = '2',
-  HALF = '3',
-  FULL = '4',
-  BULGING = '5',
-  GROSSLY_FAT = '6',
-}
-
-export enum MuscleClass {
-  ZERO = '0',
-  ONE = '1',
-  TWO = '2',
-  THREE = '3',
+  FirstCatch = 'e',
+  ReCatch = 'w',
 }
 
 export enum AgeClass {
-  PULLUS = '1',
-  JUVENILE = '3',
-  FIRST_YEAR = '3J',
-  ADULT = '4',
-  AFTER_FIRST_YEAR = '5',
+  Nest = 1,
+  Unknown = 2,
+  ThisYear = 3,
+  NotThisYear = 4,
+  LastYear = 5,
+  NotLastYear = 6,
 }
 
 export enum Sex {
-  MALE = 'M',
-  FEMALE = 'F',
-  UNKNOWN = 'U',
+  Unknown = 0,
+  Male = 1,
+  Female = 2,
 }
 
-export enum SmallFeatherInt {
-  ZERO = '0',
-  ONE = '1',
-  TWO = '2',
-  THREE = '3',
+export enum SmallFeatherIntMoult {
+  None = 0,
+  Some = 1,
+  Many = 2,
 }
 
-export enum SmallFeatherApp {
-  ZERO = '0',
-  ONE = '1',
-  TWO = '2',
-  THREE = '3',
+export enum SmallFeatherAppMoult {
+  Juvenile = 'J',
+  Unmoulted = 'U',
+  Mixed = 'M',
+  New = 'N',
+}
+
+export enum HandWingMoult {
+  None = 0,
+  NoneOld = 1,
+  AtLeastOne = 2,
+  All = 3,
+  Part = 4,
+}
+
+export enum MuscleClass {
+  Null = 0,
+  One = 1,
+  Two = 2,
+  Three = 3,
+}
+
+export interface DataEntry {
+  id: string;
+  species: string;
+  ring: string;
+  staff: number; // User ID
+  ringing_station: string;
+  net_location: number;
+  net_height: number;
+  net_direction: Direction;
+  feather_span: number;
+  wing_span: number;
+  tarsus: number;
+  notch_f2: number;
+  inner_foot: number;
+  weight_gram: number;
+  bird_status: BirdStatus;
+  fat_deposit: number | null;
+  muscle_class: MuscleClass | null;
+  age_class: AgeClass;
+  sex: Sex;
+  small_feather_int: SmallFeatherIntMoult | null;
+  small_feather_app: SmallFeatherAppMoult | null;
+  hand_wing: HandWingMoult | null;
+  date_time: string;
+  created: string;
+  updated: string;
+  comment: string;
+}
+
+// Helper for select options
+export interface SelectOption<T> {
+  value: T;
+  viewValue: string;
 }

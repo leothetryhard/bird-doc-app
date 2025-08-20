@@ -1,81 +1,119 @@
-<div class="form-container">
-  @if(isLoading){
-    <div class="loading-shade">
-      <mat-spinner></mat-spinner>
+@if (loading()) {
+  <div class="loading-spinner">
+    <mat-spinner></mat-spinner>
+  </div>
+}
+
+<form [formGroup]="entryForm" (ngSubmit)="onSubmit()" class="data-entry-form" novalidate>
+  <h2>{{ isEditMode() ? 'Daten bearbeiten' : 'Neuen Dateneintrag erstellen' }}</h2>
+
+  <div class="form-section">
+    <mat-form-field appearance="fill">
+      <mat-label>Station</mat-label>
+      <input matInput formControlName="ringing_station">
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Beringer</mat-label>
+      <input matInput type="number" formControlName="staff">
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Datum und Uhrzeit</mat-label>
+      <input matInput type="datetime-local" formControlName="date_time">
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Art</mat-label>
+      <input type="text" matInput formControlName="species" [matAutocomplete]="auto">
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="displaySpecies">
+        @for (option of filteredSpecies | async; track option.id) {
+          <mat-option [value]="option">{{ option.common_name_de }} ({{ option.scientific_name }})</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+  </div>
+
+  <div class="form-section">
+    <mat-form-field appearance="fill">
+      <mat-label>Status</mat-label>
+      <mat-select formControlName="bird_status" (selectionChange)="onBirdStatusChange($event.value)">
+        @for (option of birdStatusOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.viewValue }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Ringnummer</mat-label>
+      <input matInput formControlName="ring_number" #ringNumberInput>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Netznr.</mat-label>
+      <input matInput type="number" formControlName="net_location" #netLocationInput>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Netzfach</mat-label>
+      <input matInput type="number" formControlName="net_height">
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Flugrichtung</mat-label>
+      <mat-select formControlName="net_direction" (selectionChange)="onNetDirectionChange($event.value)">
+        <mat-option value="L">Links (L)</mat-option>
+        <mat-option value="R">Rechts (R)</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="biometrics-section">
+    <div class="column">
+      <mat-form-field appearance="fill">
+        <mat-label>Fett</mat-label>
+        <input matInput type="number" formControlName="fat_deposit">
+      </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Tarsus (mm)</mat-label>
+        <input matInput type="number" formControlName="tarsus">
+      </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Federl. (mm)</mat-label>
+        <input matInput type="number" formControlName="feather_span">
+      </mat-form-field>
+      <mat-form-field appearance="fill">
+        <mat-label>Flügell. (mm)</mat-label>
+        <input matInput type="number" formControlName="wing_span">
+      </mat-form-field>
     </div>
-  }
-
-  <h1>{{ isEditMode ? 'Edit Data Entry' : 'Create Data Entry' }}</h1>
-
-  <form [formGroup]="entryForm" (ngSubmit)="onSubmit()" novalidate>
-    <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>Ringing Station</mat-label>
-        <mat-select formControlName="ringing_station" #formInput appFocusNext="staff">
-          <mat-option [value]="1">Station A</mat-option>
-          <mat-option [value]="2">Station B</mat-option>
-        </mat-select>
+    <div class="column">
+      <mat-form-field appearance="fill">
+        <mat-label>Gewicht (g)</mat-label>
+        <input matInput type="number" formControlName="weight_gram">
       </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Staff</mat-label>
-        <mat-select formControlName="staff" #formInput appFocusNext="date_time">
-          <mat-option [value]="1">Dr. Schmidt</mat-option>
-          <mat-option [value]="2">Dr. Meier</mat-option>
-        </mat-select>
+      <mat-form-field appearance="fill">
+        <mat-label>Kerbe F2 (mm)</mat-label>
+        <input matInput type="number" formControlName="notch_f2">
       </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Date and Time</mat-label>
-        <input matInput="picker" formControlName="date_time" #formInput appFocusNext="species">
-        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-        <mat-datepicker #picker></mat-datepicker>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Species (German Name)</mat-label>
-        <input type="text"
-               placeholder="Start typing..."
-               matInput
-               formControlName="species"
-               [matAutocomplete]="autoSpecies"
-               #formInput
-               appFocusNext="bird_status">
-        <mat-autocomplete #autoSpecies="matAutocomplete" (optionSelected)="focusNext('species')">
-        ="displaySpecies">
-          @for (species of filteredSpecies$ | async; track species){
-            <mat-option [value]="species">
-              {{ species.german_name }} ({{ species.code }})
-            </mat-option>
-          }
-        </mat-autocomplete>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Bird Status</mat-label>
-        <mat-select formControlName="bird_status" #formInput appFocusNext="ring_number">
-          @for (status of birdStatusValues; track status){
-            <mat-option [value]="status">{{ status }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Ring Number</mat-label>
-        <input matInput formControlName="ring_number" #formInput appFocusNext="net_location">
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Comment</mat-label>
-        <textarea matInput formControlName="comment" #formInput></textarea>
+      <mat-form-field appearance="fill">
+        <mat-label>Innenfuß (mm)</mat-label>
+        <input matInput type="number" formControlName="inner_foot">
       </mat-form-field>
     </div>
+  </div>
 
-    <div class="form-actions">
-      <button mat-stroked-button type="button" [routerLink]="['/data-entries']">Cancel</button>
-      <button mat-raised-button color="primary" type="submit" [disabled]="entryForm.invalid || isLoading">
-        {{ isEditMode ? 'Update' : 'Save' }}
-      </button>
-    </div>
-  </form>
-</div>
+  <div class="form-section">
+    <mat-form-field appearance="fill" class="full-width">
+      <mat-label>Bemerkungen</mat-label>
+      <textarea matInput formControlName="comment" rows="3"></textarea>
+    </mat-form-field>
+  </div>
+
+  <div class="action-buttons">
+    <button mat-stroked-button type="button" routerLink="/">Abbrechen</button>
+    <button mat-flat-button color="primary" type="submit" [disabled]="entryForm.invalid || loading()">
+      {{ isEditMode() ? 'Speichern' : 'Erstellen' }}
+    </button>
+  </div>
+</form>
