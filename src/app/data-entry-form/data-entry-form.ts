@@ -12,7 +12,7 @@ import {CommonModule, DatePipe, DecimalPipe} from '@angular/common';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import {MatSelectModule} from '@angular/material/select';
+import {MatSelect, MatSelectModule} from '@angular/material/select';
 import {MatButtonModule} from '@angular/material/button';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
 import {MatDatepickerModule} from '@angular/material/datepicker';
@@ -38,6 +38,9 @@ import {
 import {ApiService} from '../service/api.service';
 import {Species} from '../models/species.model';
 import {MatCheckboxModule} from '@angular/material/checkbox';
+import {RingingStation} from '../models/ringing-station.model';
+import {Scientist} from '../models/scientist.model';
+import {RingSize} from '../models/ring.model';
 
 @Component({
   selector: 'app-data-entry-form',
@@ -68,7 +71,6 @@ export class DataEntryFormComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly datePipe = inject(DatePipe);
-
   // Component State
   private readonly entryId = signal<string | null>(this.route.snapshot.paramMap.get('id'));
   readonly isEditMode = computed(() => !!this.entryId());
@@ -76,19 +78,22 @@ export class DataEntryFormComponent implements OnInit {
 
   // Species Autocomplete
   filteredSpecies!: Observable<Species[]>;
+  filteredStations!: Observable<RingingStation[]>;
+  filteredScientists!: Observable<Scientist[]>;
 
   // Form Definition
   entryForm = this.fb.group({
     organization: ['AUW', Validators.required],
-    ringing_station: ['ILLMITZ', Validators.required],
-    staff: ['FB', Validators.required], // Assuming user ID is a number
+    ringing_station: [null as RingingStation | null, Validators.required],
+    staff: [null as Scientist | null, Validators.required],
     date_time: [this.getInitialDateTime(), Validators.required],
     species: ['', Validators.required],
     bird_status: [BirdStatus.FirstCatch, Validators.required],
-    ring_id: ['', Validators.required],
+    ring_size: [RingSize.Medium, Validators.required],
+    ring_number: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
     net_location: [null as number | null, Validators.required],
-    net_height: [null as number | null, Validators.required],
-    net_direction: [Direction.Left, Validators.required],
+    net_height: [null as number | null],
+    net_direction: [null as number | null],
     fat_deposit: [null as number | null],
     muscle_class: [null as MuscleClass | null],
     age_class: [AgeClass.Unknown, Validators.required],
@@ -110,7 +115,7 @@ export class DataEntryFormComponent implements OnInit {
   });
 
   private readonly focusOrder: string[] = [
-    'ringing_station', 'staff', 'date_time', 'species', 'bird_status', 'ring_id',
+    'ringing_station', 'staff', 'date_time', 'species', 'bird_status', 'ring_size', 'ring_number',
     'net_location', 'net_height', 'net_direction', 'age_class', 'sex', 'fat_deposit', 'muscle_class',
     'small_feather_int', 'small_feather_app', 'hand_wing',
     'tarsus', 'feather_span', 'wing_span', 'weight_gram', 'notch_f2',
@@ -122,7 +127,8 @@ export class DataEntryFormComponent implements OnInit {
     {value: BirdStatus.ReCatch, viewValue: 'Wiederfang (w)', key: 'w'},
   ];
 
-  directionOptions: SelectOption<Direction>[] = [
+  directionOptions: SelectOption<Direction | null>[] = [
+    {value: null, viewValue: '---'},
     {value: Direction.Left, viewValue: 'Links (l)', key: 'l'},
     {value: Direction.Right, viewValue: 'Rechts (r)', key: 'r'},
   ];
@@ -187,8 +193,15 @@ export class DataEntryFormComponent implements OnInit {
     {value: FatClass.Eight, viewValue: '8', key: '8'},
   ];
 
+  ringSizeOptions: SelectOption<RingSize>[] = [
+    { value: RingSize.XSmall, viewValue: 'V (Extra Small)', key: 'v' },
+    { value: RingSize.Small, viewValue: 'T (Small)', key: 't' },
+    { value: RingSize.Medium, viewValue: 'S (Medium)', key: 's' },
+    { value: RingSize.Large, viewValue: 'X (Large)', key: 'x' },
+    { value: RingSize.XLarge, viewValue: 'P (Extra Large)', key: 'p' },
+  ];
+
   constructor() {
-    // Effect to load data in edit mode
     effect(() => {
       const id = this.entryId();
       console.log('Edit Effect', id);
@@ -217,11 +230,43 @@ export class DataEntryFormComponent implements OnInit {
         )
       )
     );
+    this.filteredStations = this.entryForm.get('ringing_station')!.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300),
+      map(value => (typeof value === 'string' ? value : value?.name ?? '')),
+      distinctUntilChanged(),
+      switchMap(name =>
+        this.apiService.getRingingStations(name || '').pipe(
+          map(response => response.results),
+          catchError(() => of([]))
+        )
+      )
+    );
+
+    this.filteredScientists = this.entryForm.get('staff')!.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300),
+      map(value => (typeof value === 'string' ? value : value?.full_name ?? '')),
+      distinctUntilChanged(),
+      switchMap(name =>
+        this.apiService.getScientists(name || '').pipe(
+          map(response => response.results),
+          catchError(() => of([]))
+        )
+      )
+    );
   }
 
-  // Handle Autocomplete Display
   displaySpecies(species: Species): string {
     return species ? species.common_name_de : '';
+  }
+
+  displayStation(station: RingingStation): string {
+    return station ? station.name : '';
+  }
+
+  displayScientist(scientist: Scientist): string {
+    return scientist ? `${scientist.full_name} (${scientist.handle})` : '';
   }
 
   onSubmit(): void {
@@ -238,7 +283,7 @@ export class DataEntryFormComponent implements OnInit {
       : this.apiService.createDataEntry(formValue);
 
     saveOperation.subscribe({
-      next: () => this.router.navigate(['/data-entries']), // Navigate to list view on success
+      next: () => this.router.navigate(['/data-entries']),
       error: (err) => {
         console.error('Error saving data entry', err);
         this.loading.set(false);
@@ -249,32 +294,40 @@ export class DataEntryFormComponent implements OnInit {
 
   private getInitialDateTime(): string {
     const now = new Date();
-    now.setMinutes(0, 0, 0); // Set to the last full hour
-    // Format to 'yyyy-MM-ddTHH:mm' which is expected by datetime-local input
+    now.setMinutes(0, 0, 0);
     return this.datePipe.transform(now, 'yyyy-MM-ddTHH:mm')!;
   }
 
-  // Data Transformation for Form Patching
   private transformToForm(entry: DataEntry): any {
-    // The API might return related objects; we need to extract IDs for the form
     const formValue = {...entry} as any;
-    formValue.species = entry.species; // Assume the backend gives you the object or ID.
-    formValue.ring_id = (entry.ring as any)?.number; // Adjust based on API response
-    // Ensure date is in a format the form control can use
+    formValue.species = entry.species;
+    if (entry.ring) {
+      formValue.ring_size = entry.ring.size;
+      formValue.ring_number = entry.ring.number;
+    }
     formValue.date_time = this.datePipe.transform(entry.date_time, 'yyyy-MM-ddTHH:mm');
     return formValue;
   }
 
-  // Data Transformation for API Submission
   private transformFromForm(formValue: any): Partial<DataEntry> {
     const payload = {...formValue};
     payload.species_id = formValue.species?.id;
-    payload.staff_id = 2;
+    payload.species = formValue.species?.id;
+    payload.ringing_station_id = formValue.ringing_station?.handle;
+    payload.staff_id = formValue.staff?.id;
+    delete payload.species;
+    delete payload.ringing_station;
+    delete payload.staff;
     return payload;
   }
 
-  onSelectKeydown(event: KeyboardEvent, controlName: string, options: SelectOption<any>[]): void {
-    // Ignore modifier keys to allow shortcuts like Ctrl+V
+  onSelectKeydown(
+    event: KeyboardEvent,
+    controlName: string,
+    options: SelectOption<any>[],
+    // Add this parameter to accept the component reference
+    selectComponent: MatSelect
+  ): void {
     if (event.ctrlKey || event.altKey || event.metaKey) {
       return;
     }
@@ -283,8 +336,12 @@ export class DataEntryFormComponent implements OnInit {
     const matchingOption = options.find(opt => opt.key === key);
 
     if (matchingOption) {
-      event.preventDefault(); // Stop default mat-select behavior
+      event.preventDefault();
       this.entryForm.get(controlName)?.setValue(matchingOption.value);
+
+      // ADD THIS LINE to close the dropdown panel
+      selectComponent.close();
+
       this.focusNext(controlName);
     }
   }
@@ -296,7 +353,6 @@ export class DataEntryFormComponent implements OnInit {
     const currentIndex = this.focusOrder.indexOf(currentControlName);
     if (currentIndex > -1 && currentIndex < this.focusOrder.length - 1) {
       const nextControlName = this.focusOrder[currentIndex + 1];
-      // Use a minimal timeout to allow the view to update before focusing
       setTimeout(() => {
         const nextEl = document.querySelector(`[formControlName="${nextControlName}"]`) as HTMLElement;
         nextEl?.focus();

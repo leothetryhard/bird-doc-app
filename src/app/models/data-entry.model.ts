@@ -1,3 +1,5 @@
+import {Ring} from './ring.model';
+
 export enum Direction {
   Left = 'L',
   Right = 'R',
@@ -66,7 +68,7 @@ export enum FatClass {
 export interface DataEntry {
   id: string;
   species: string;
-  ring: string;
+  ring: Ring;
   staff: number; // User ID
   ringing_station: string;
   net_location: number;

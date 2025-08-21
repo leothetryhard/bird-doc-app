@@ -5,6 +5,8 @@ import {DataEntry} from '../models/data-entry.model';
 import {Species} from '../models/species.model';
 import {Ring} from '../models/ring.model';
 import {PaginatedApiResponse} from '../models/paginated-api-response.model';
+import {RingingStation} from '../models/ringing-station.model';
+import {Scientist} from '../models/scientist.model';
 
 @Injectable({
   providedIn: 'root',
@@ -39,5 +41,21 @@ export class ApiService {
 
   getRings(): Observable<Ring[]> {
     return this.http.get<Ring[]>(`${this.apiUrl}/rings/`);
+  }
+
+  getRingingStations(searchTerm?: string): Observable<PaginatedApiResponse<RingingStation>> {
+    let params = new HttpParams();
+    if (searchTerm) {
+      params = params.set('search', searchTerm);
+    }
+    return this.http.get<PaginatedApiResponse<RingingStation>>(`${this.apiUrl}/ringing-stations/`, {params});
+  }
+
+  getScientists(searchTerm?: string): Observable<PaginatedApiResponse<Scientist>> {
+    let params = new HttpParams();
+    if (searchTerm) {
+      params = params.set('search', searchTerm);
+    }
+    return this.http.get<PaginatedApiResponse<Scientist>>(`${this.apiUrl}/scientists/`, {params});
   }
 }
