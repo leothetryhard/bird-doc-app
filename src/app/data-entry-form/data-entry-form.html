@@ -41,8 +41,15 @@
     <div class="form-section">
       <mat-form-field appearance="outline" floatLabel="always">
         <mat-label>Art</mat-label>
-        <input type="text" matInput formControlName="species" [matAutocomplete]="auto">
-        <mat-autocomplete #auto="matAutocomplete" [displayWith]="displaySpecies">
+        <input
+          type="text"
+          matInput
+          formControlName="species"
+          [matAutocomplete]="auto" selectOnTab>
+        <mat-autocomplete
+          #auto="matAutocomplete"
+          [displayWith]="displaySpecies"
+          [autoActiveFirstOption]="true">
           @for (option of filteredSpecies | async; track option.id) {
             <mat-option [value]="option">{{ option.common_name_de }} ({{ option.scientific_name }})</mat-option>
           }

@@ -41,6 +41,7 @@ import {MatCheckboxModule} from '@angular/material/checkbox';
 import {RingingStation} from '../models/ringing-station.model';
 import {Scientist} from '../models/scientist.model';
 import {RingSize} from '../models/ring.model';
+import {SelectOnTabDirective} from '../core/directives/select-on-tab';
 
 @Component({
   selector: 'app-data-entry-form',
@@ -57,6 +58,7 @@ import {RingSize} from '../models/ring.model';
     MatNativeDateModule,
     MatProgressSpinnerModule,
     RouterLink,
+    SelectOnTabDirective,
     MatCheckboxModule
   ],
   providers: [provideNativeDateAdapter(), DatePipe, DecimalPipe],
@@ -87,7 +89,7 @@ export class DataEntryFormComponent implements OnInit {
     ringing_station: [null as RingingStation | null, Validators.required],
     staff: [null as Scientist | null, Validators.required],
     date_time: [this.getInitialDateTime(), Validators.required],
-    species: ['', Validators.required],
+    species: [null as string | Species | null, Validators.required],
     bird_status: [BirdStatus.FirstCatch, Validators.required],
     ring_size: [RingSize.Medium, Validators.required],
     ring_number: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
@@ -194,17 +196,16 @@ export class DataEntryFormComponent implements OnInit {
   ];
 
   ringSizeOptions: SelectOption<RingSize>[] = [
-    { value: RingSize.XSmall, viewValue: 'V (Extra Small)', key: 'v' },
-    { value: RingSize.Small, viewValue: 'T (Small)', key: 't' },
-    { value: RingSize.Medium, viewValue: 'S (Medium)', key: 's' },
-    { value: RingSize.Large, viewValue: 'X (Large)', key: 'x' },
-    { value: RingSize.XLarge, viewValue: 'P (Extra Large)', key: 'p' },
+    {value: RingSize.XSmall, viewValue: 'V (Extra Small)', key: 'v'},
+    {value: RingSize.Small, viewValue: 'T (Small)', key: 't'},
+    {value: RingSize.Medium, viewValue: 'S (Medium)', key: 's'},
+    {value: RingSize.Large, viewValue: 'X (Large)', key: 'x'},
+    {value: RingSize.XLarge, viewValue: 'P (Extra Large)', key: 'p'},
   ];
 
   constructor() {
     effect(() => {
       const id = this.entryId();
-      console.log('Edit Effect', id);
       if (id) {
         this.loading.set(true);
         this.apiService.getDataEntry(id).subscribe(entry => {
@@ -219,14 +220,12 @@ export class DataEntryFormComponent implements OnInit {
     this.filteredSpecies = this.entryForm.get('species')!.valueChanges.pipe(
       startWith(''),
       debounceTime(300),
-      map(value => (typeof value === 'string' ? value : '')),
+      map(value => (typeof value === 'string' ? value : value?.common_name_de ?? '')),
       distinctUntilChanged(),
       switchMap(name =>
         this.apiService.getSpecies(name || '').pipe(
           map(response => response.results),
-          catchError(() => {
-            return of([]);
-          })
+          catchError(() => of([]))
         )
       )
     );
@@ -312,7 +311,7 @@ export class DataEntryFormComponent implements OnInit {
   private transformFromForm(formValue: any): Partial<DataEntry> {
     const payload = {...formValue};
     payload.species_id = formValue.species?.id;
-    payload.species = formValue.species?.id;
+    console.log(formValue.species);
     payload.ringing_station_id = formValue.ringing_station?.handle;
     payload.staff_id = formValue.staff?.id;
     delete payload.species;
@@ -345,6 +344,7 @@ export class DataEntryFormComponent implements OnInit {
       this.focusNext(controlName);
     }
   }
+
 
   /**
    * Moves focus to the next element in the defined focus order.
