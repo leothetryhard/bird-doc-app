@@ -1,9 +1,11 @@
+// src/app/service/api.service.ts
+
 import {Injectable, inject} from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {DataEntry} from '../models/data-entry.model';
 import {Species} from '../models/species.model';
-import {Ring} from '../models/ring.model';
+import {RingSize} from '../models/ring.model';
 import {PaginatedApiResponse} from '../models/paginated-api-response.model';
 import {RingingStation} from '../models/ringing-station.model';
 import {Scientist} from '../models/scientist.model';
@@ -17,6 +19,13 @@ export class ApiService {
 
   getDataEntries(): Observable<DataEntry[]> {
     return this.http.get<DataEntry[]>(`${this.apiUrl}/data-entries/`);
+  }
+
+  getDataEntriesByRing(ringSize: RingSize, ringNumber: string): Observable<PaginatedApiResponse<DataEntry>> {
+    const params = new HttpParams()
+      .set('ring_size', ringSize)
+      .set('ring_number', ringNumber);
+    return this.http.get<PaginatedApiResponse<DataEntry>>(`${this.apiUrl}/data-entries/`, {params});
   }
 
   getDataEntry(id: string): Observable<DataEntry> {
@@ -39,8 +48,9 @@ export class ApiService {
     return this.http.get<PaginatedApiResponse<Species>>(`${this.apiUrl}/species/`, {params});
   }
 
-  getRings(): Observable<Ring[]> {
-    return this.http.get<Ring[]>(`${this.apiUrl}/rings/`);
+  getNextRingNumber(size: RingSize): Observable<{ next_number: number }> {
+    const params = new HttpParams().set('size', size);
+    return this.http.get<{ next_number: number }>(`${this.apiUrl}/rings/next-number/`, {params});
   }
 
   getRingingStations(searchTerm?: string): Observable<PaginatedApiResponse<RingingStation>> {
