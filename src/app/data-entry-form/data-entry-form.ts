@@ -1,5 +1,3 @@
-// src/app/features/data-entry/data-entry-form.ts
-
 import {
   ChangeDetectionStrategy,
   Component,
@@ -13,7 +11,7 @@ import {
 import {toSignal} from '@angular/core/rxjs-interop';
 import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {CommonModule, DatePipe, DecimalPipe} from '@angular/common';
-import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {ActivatedRoute, RouterLink} from '@angular/router';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatSelect, MatSelectModule} from '@angular/material/select';
@@ -79,7 +77,6 @@ export class DataEntryFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly apiService = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly datePipe = inject(DatePipe);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -99,7 +96,7 @@ export class DataEntryFormComponent implements OnInit {
     staff: [null as Scientist | null, Validators.required],
     date_time: [this.getInitialDateTime(), Validators.required],
     species: [null as Species | null, Validators.required],
-    bird_status: [BirdStatus.FirstCatch, Validators.required],
+    bird_status: [null as BirdStatus | null, Validators.required],
     ring_size: [null as RingSize | null, Validators.required],
     ring_number: ['', [Validators.required, Validators.pattern('^[0-9]*$')]],
     net_location: [null as number | null, Validators.required],
@@ -143,17 +140,19 @@ export class DataEntryFormComponent implements OnInit {
     'inner_foot', 'has_mites', 'comment'
   ];
 
-  // Options for select dropdowns (no changes needed here)
-  birdStatusOptions: SelectOption<BirdStatus>[] = [{
-    value: BirdStatus.FirstCatch,
-    viewValue: 'Erstfang (e)',
-    key: 'e'
-  }, {value: BirdStatus.ReCatch, viewValue: 'Wiederfang (w)', key: 'w'},];
-  directionOptions: SelectOption<Direction | null>[] = [{value: null, viewValue: '---'}, {
-    value: Direction.Left,
-    viewValue: 'Links (l)',
-    key: 'l'
-  }, {value: Direction.Right, viewValue: 'Rechts (r)', key: 'r'},];
+
+  birdStatusOptions: SelectOption<BirdStatus | null>[] = [
+    {value: null, viewValue: '---'},
+    {value: BirdStatus.FirstCatch, viewValue: 'Erstfang (e)', key: 'e'},
+    {value: BirdStatus.ReCatch, viewValue: 'Wiederfang (w)', key: 'w'}
+  ];
+
+  directionOptions: SelectOption<Direction | null>[] = [
+    {value: null, viewValue: '---'},
+    {value: Direction.Left, viewValue: 'Links (l)', key: 'l'},
+    {value: Direction.Right, viewValue: 'Rechts (r)', key: 'r'}
+  ];
+
   muscleClassOptions: SelectOption<MuscleClass | null>[] = [{value: null, viewValue: '---'}, {
     value: MuscleClass.Null,
     viewValue: '0 - Kiel nicht fühlbar',
@@ -163,6 +162,7 @@ export class DataEntryFormComponent implements OnInit {
     viewValue: '2 - Kiel kaum fühlbar',
     key: '2'
   }, {value: MuscleClass.Three, viewValue: '3 - Kiel nicht fühlbar (konvex)', key: '3'},];
+
   ageClassOptions: SelectOption<AgeClass>[] = [{
     value: AgeClass.Nest,
     viewValue: '1 - Nestling',
@@ -176,11 +176,13 @@ export class DataEntryFormComponent implements OnInit {
     viewValue: '5 - Vorjährig',
     key: '5'
   }, {value: AgeClass.NotLastYear, viewValue: '6 - Nicht Vorjährig', key: '6'},];
+
   sexOptions: SelectOption<Sex>[] = [{value: Sex.Unknown, viewValue: '0 - Unbekannt', key: '0'}, {
     value: Sex.Male,
     viewValue: '1 - Männlich',
     key: '1'
   }, {value: Sex.Female, viewValue: '2 - Weiblich', key: '2'},];
+
   smallFeatherIntOptions: SelectOption<SmallFeatherIntMoult | null>[] = [{
     value: null,
     viewValue: '---'
@@ -189,6 +191,7 @@ export class DataEntryFormComponent implements OnInit {
     viewValue: '1 - bis zu 20 Federn',
     key: '1'
   }, {value: SmallFeatherIntMoult.Many, viewValue: '2 - mehr als 20 Federn', key: '2'},];
+
   smallFeatherAppOptions: SelectOption<SmallFeatherAppMoult | null>[] = [{
     value: null,
     viewValue: '---'
@@ -205,6 +208,7 @@ export class DataEntryFormComponent implements OnInit {
     viewValue: 'M - Zwischen 1/3 und 2/3 erneuert',
     key: 'm'
   }, {value: SmallFeatherAppMoult.New, viewValue: 'N - Mehr als 2/3 erneuert', key: 'n'},];
+
   handWingMoultOptions: SelectOption<HandWingMoult | null>[] = [{
     value: null,
     viewValue: '---'
@@ -217,6 +221,7 @@ export class DataEntryFormComponent implements OnInit {
     viewValue: '3 - Alle vermausert',
     key: '3'
   }, {value: HandWingMoult.Part, viewValue: '4 - Ein Teil ist vermausert', key: '4'},];
+
   fatClassOptions: SelectOption<FatClass | null>[] = [{value: null, viewValue: '---'}, {
     value: FatClass.Null,
     viewValue: '0',
@@ -234,6 +239,7 @@ export class DataEntryFormComponent implements OnInit {
     viewValue: '6',
     key: '6'
   }, {value: FatClass.Seven, viewValue: '7', key: '7'}, {value: FatClass.Eight, viewValue: '8', key: '8'},];
+
   ringSizeOptions: SelectOption<RingSize>[] = [{
     value: RingSize.XSmall,
     viewValue: 'V (Extra Small)',
@@ -363,7 +369,10 @@ export class DataEntryFormComponent implements OnInit {
       : this.apiService.createDataEntry(formValue);
 
     saveOperation.subscribe({
-      next: () => this.router.navigate(['/data-entries']),
+      next: () => {
+        this.snackBar.open('Eintrag wurde gespeichert.', 'Schließen', {duration: 3000});
+        this.clearForm();
+      },
       error: (err) => {
         console.error('Error saving data entry', err);
         this.snackBar.open(`Error: ${err.message}`, 'Close');
@@ -424,5 +433,27 @@ export class DataEntryFormComponent implements OnInit {
         nextEl?.focus();
       }, 50);
     }
+  }
+
+  private clearForm(): void {
+    const preservedValues = {
+      ringing_station: this.entryForm.get('ringing_station')?.value,
+      staff: this.entryForm.get('staff')?.value,
+      organization: this.entryForm.get('organization')?.value,
+    };
+
+    this.entryForm.reset({
+      ...preservedValues,
+      date_time: this.getInitialDateTime(),
+      age_class: AgeClass.Unknown,
+      sex: Sex.Unknown,
+      has_mites: false,
+      has_hunger_stripes: false,
+      has_brood_patch: false,
+      has_cpl_plus: false,
+    });
+
+    this.recaptureHistory.set([]);
+
   }
 }
